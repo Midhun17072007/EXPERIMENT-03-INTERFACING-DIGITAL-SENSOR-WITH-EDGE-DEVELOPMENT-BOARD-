@@ -68,60 +68,32 @@ The sensor measures **temperature using a thermistor** and **humidity using a ca
 ## **PROGRAM (MicroPython)**  
 ``` ```
 ```
-from machine import Pin, I2C
-import utime
+import dht
+import machine 
+import time
 
-#MPU6050 I2C address
-MPU6050_ADDR = 0x68
-
-#MPU6050 Registers
-PWR_MGMT_1 = 0x6B
-ACCEL_XOUT_H = 0x3B
-GYRO_XOUT_H = 0x43
-
-#Initialize I2C
-sda = Pin(0) # Define your SDA pin
-scl = Pin(1) # Define your SCL pin
-i2c = I2C(0, scl=scl, sda=sda, freq=400000)
-
-def mpu6050_init():
-    i2c.writeto_mem(MPU6050_ADDR, PWR_MGMT_1, b'\x00') # Wake up MPU6050
-
-def read_raw_data(reg):
-    data = i2c.readfrom_mem(MPU6050_ADDR, reg, 2)
-    value = (data[0] << 8) | data[1] # Combine high and low bytes
-    if value > 32767:
-        value -= 65536 # Convert to signed 16-bit
-    return value
-
-def get_sensor_data():
-    accel_x = read_raw_data(ACCEL_XOUT_H) / 16384.0 # Convert to g
-    accel_y = read_raw_data(ACCEL_XOUT_H + 2) / 16384.0
-    accel_z = read_raw_data(ACCEL_XOUT_H + 4) / 16384.0
-
-    gyro_x = read_raw_data(GYRO_XOUT_H) / 131.0 # Convert to deg/s
-    gyro_y = read_raw_data(GYRO_XOUT_H + 2) / 131.0
-    gyro_z = read_raw_data(GYRO_XOUT_H + 4) / 131.0
-
-    return (accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z)
-
-# Initialize MPU6050
-mpu6050_init()
+# Define DHT22 sensor pin (GPIO XX -15)
+dht_pin = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
+sensor = dht.DHT22(dht_pin)
 
 while True:
-    ax, ay, az, gx, gy, gz = get_sensor_data()
-    print(f"Accel: X={ax}, Y={ay}, Z={az} | Gyro: X={gx}, Y={gy}, Z={gz}")
-    utime.sleep(1)
+    try:
+        sensor.measure()
+        temp = sensor.temperature() # Get temperature in Celsius 
+        hum = sensor.humidity() # Get humidity
+        print(f"Temperature: {temp:.1f}°C")
+        print(f"Humidity: {hum:.1f}%")
+
+    except Exception as e:
+        print("Error reading sensor:", e)
+    time.sleep(2) # Wait for 2 seconds before next reading
 ---
 ```
 ## **OUTPUT:**  
  
 ---
-![Screenshot 2025-03-10 113700](https://github.com/user-attachments/assets/690da3b0-dc02-4852-acdd-7366367eef3b)
-![Screenshot 2025-03-10 113809](https://github.com/user-attachments/assets/bf534bae-25a6-4255-8e12-63c278f0d48f)
-![Screenshot 2025-03-10 114045](https://github.com/user-attachments/assets/e561dd92-c109-4e81-b315-d85b95d27a45)
-![Screenshot 2025-03-10 114216](https://github.com/user-attachments/assets/73a549b2-be84-43c2-9a17-ad092b8d45e5)
-
+![Screenshot 2025-03-13 105734](https://github.com/user-attachments/assets/f0a9503a-7609-4d84-8d18-c184f1a110cd)
+![Screenshot 2025-03-13 110645](https://github.com/user-attachments/assets/cfdcec19-b0a6-4c2e-bcb2-c73b5c6ed737)
 ---
 
 ## **RESULT:**  
